@@ -77,3 +77,14 @@ body{font-size:16px;line-height:1.5}
   .tickets-heading>.mobile-create-ticket>span:first-child{font-size:18px!important}
   .tickets-heading>.mobile-create-ticket .create-ticket-label{display:inline;font-size:14px!important}
 }
+/* Demo access stays visually secondary to account sign-in while remaining easy to find. */
+.login-divider{display:flex;align-items:center;gap:12px;margin:16px 0 12px;color:#8e97a4;font-size:12px}
+.login-divider::before,.login-divider::after{content:"";height:1px;flex:1;background:#e9ecf1}
+.demo-login-button{position:relative;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:42px;border:1px solid #cfd8f3;border-radius:6px;background:#f7f8ff;color:#344caa;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s,border-color .15s}
+.demo-login-button:hover:not(:disabled){background:#eef1ff;border-color:#aab8ee}
+.demo-login-button:focus-visible{outline:3px solid #7890ff;outline-offset:2px}
+.demo-login-button:disabled{opacity:.65;cursor:wait}
+.login-security-note{font-size:10px}
+.demo-workspace-banner{display:flex;align-items:center;gap:10px;margin:0 0 16px;padding:11px 14px;border:1px solid #d9e2fb;border-radius:7px;background:#f2f5ff;color:#40547f;font-size:13px}
+.demo-workspace-banner strong{color:#304a9d}
+@media(max-width:620px){.demo-workspace-banner{align-items:flex-start;flex-direction:column;gap:3px}}

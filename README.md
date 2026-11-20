@@ -42,12 +42,14 @@ The API is at `http://localhost:8000`; interactive API docs are at `/docs`. The 
 ## Authentication and access
 
 - `POST /api/auth/login` accepts an email and password and returns a short-lived bearer access token.
+- `POST /api/auth/demo` issues a short-lived bearer token for a dedicated demo workspace. The demo endpoint can be disabled with `DEMO_LOGIN_ENABLED=false` (enabled by default).
 - `GET /api/auth/me` returns the current account; `POST /api/auth/logout` revokes the current token.
 - Every ticket, routing, directory, and case-linking endpoint requires `Authorization: Bearer <token>`. Data is scoped to the signed-in user's agency.
 - Agents can update and link tickets assigned to them. Admins and escalation managers can update agency tickets and run routing. Only admins can delete tickets. Admins and escalation managers can manage routing profiles.
 - Passwords are hashed with Argon2id. Login attempts are rate-limited to five attempts per normalized email/client-IP pair and 100 attempts per client IP in a 15-minute window; repeated attempts return HTTP 429 with a retry interval. Rate-limit keys are stored as hashes in SQLite.
 - Local development generates a temporary JWT secret automatically. For production, set `APP_ENV=production` and provide a stable `JWT_SECRET_KEY` containing exactly 64 lowercase hexadecimal characters (32 bytes). Generate one with `python -c "import secrets; print(secrets.token_hex(32))"`; store it in your deployment secret manager and never commit it. All workers must use the same key, retained across restarts. Startup rejects wrong formats, known placeholders, and simple repeated patterns. This validation cannot prove the randomness or provenance of an arbitrary correctly formatted value; use the cryptographic generator or a trusted secret manager.
 - Existing accounts created without a password need one set from a trusted backend terminal: `python -m app.db.set_password user@example.com`. The command prompts for a password of at least 12 characters.
+- Demo login creates a reserved demo agency, an `escalation_manager` demo user, two routing candidates, and isolated sample tickets on first use. Demo users can explore tickets, case links, routing, SLA information, and insights inside that agency; user directory and routing-profile management are blocked, and the demo role cannot use admin-only ticket deletion. Demo accounts have no password credential and authenticate only through `POST /api/auth/demo`. `DEMO_LOGIN_ENABLED=false` disables provisioning and demo sign-in.
 
 ## Demo workspace data
 
@@ -143,6 +145,7 @@ Set these backend environment variables in Render's service settings:
 | `JWT_SECRET_KEY` | Generate a stable secret using `python -c "import secrets; print(secrets.token_hex(32))"`; enter it as a secret in Render and do not commit it. |
 | `CORS_ORIGINS` | The exact frontend origin, for example `https://opsdesk-ui.onrender.com` (no path or trailing slash). |
 | `TRUSTED_PROXY_IPS` | Leave empty unless proxy source addresses are explicitly verified and forwarding headers are sanitized by that proxy. |
+| `DEMO_LOGIN_ENABLED` | Optional; defaults to `true`. Set to `false` to disable public demo provisioning and sign-in. |
 
 Render supplies `PORT`; `app.serve` reads it. The backend currently reads `CORS_ORIGINS`, not `CORS_ALLOWED_ORIGINS`. Keep the JWT secret stable across restarts. Never use a local development key or a value copied into source control.
 

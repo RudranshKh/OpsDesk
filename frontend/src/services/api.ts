@@ -10,6 +10,7 @@ export type AuthUser = {
   full_name: string
   email: string
   role: 'admin' | 'agent' | 'escalation_manager'
+  is_demo: boolean
 }
 
 export type LoginResponse = {
@@ -218,6 +219,12 @@ export async function login(email: string, password: string): Promise<LoginRespo
     method: 'POST',
     body: JSON.stringify({ email, password }),
   })
+  storeAccessToken(result.access_token)
+  return result
+}
+
+export async function demoLogin(): Promise<LoginResponse> {
+  const result = await request<LoginResponse>('/auth/demo', { method: 'POST' })
   storeAccessToken(result.access_token)
   return result
 }

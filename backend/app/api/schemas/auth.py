@@ -20,6 +20,7 @@ class AuthUserRead(BaseModel):
     full_name: str
     email: str
     role: str
+    is_demo: bool
 
 
 class LoginResponse(BaseModel):

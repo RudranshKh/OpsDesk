@@ -10,6 +10,11 @@ from app.db.models import AgentProfile, Agency, User
 router = APIRouter(tags=["directory"])
 
 
+def _deny_demo_user_management(user: User) -> None:
+    if user.agency.is_demo:
+        raise HTTPException(status_code=403, detail="User management is unavailable in the demo workspace")
+
+
 @router.get("/agencies", response_model=list[AgencyOption])
 def list_agencies(
     user: User = Depends(get_current_user), db: Session = Depends(get_db)
@@ -23,6 +28,7 @@ def list_users(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[User]:
+    _deny_demo_user_management(user)
     if agency_id is not None and agency_id != user.agency_id:
         raise HTTPException(status_code=403, detail="You cannot access users from another agency")
     statement = select(User).where(
@@ -37,6 +43,7 @@ def get_routing_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> RoutingProfileRead:
+    _deny_demo_user_management(current_user)
     user = db.scalar(select(User).where(User.id == user_id, User.agency_id == current_user.agency_id))
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -58,6 +65,7 @@ def update_routing_profile(
     current_user: User = Depends(require_roles("admin", "escalation_manager")),
     db: Session = Depends(get_db),
 ) -> RoutingProfileRead:
+    _deny_demo_user_management(current_user)
     user = db.scalar(select(User).where(User.id == user_id, User.agency_id == current_user.agency_id))
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")

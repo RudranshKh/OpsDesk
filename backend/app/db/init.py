@@ -19,6 +19,7 @@ def _migrate_sqlite_columns(database_engine: Engine) -> None:
 
     inspector = inspect(database_engine)
     migrations = {
+        "agencies": {"is_demo": "BOOLEAN NOT NULL DEFAULT 0"},
         "tickets": {
             "region": "VARCHAR(80)",
             "check_in_at": "DATETIME",

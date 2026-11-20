@@ -44,6 +44,7 @@ class Settings:
     jwt_issuer: str = os.getenv("JWT_ISSUER", "opsdesk")
     jwt_audience: str = os.getenv("JWT_AUDIENCE", "opsdesk-api")
     access_token_minutes: int = int(os.getenv("ACCESS_TOKEN_MINUTES", "30"))
+    demo_login_enabled: bool = os.getenv("DEMO_LOGIN_ENABLED", "true").strip().lower() in {"1", "true", "yes"}
     sla_targets = json.loads(os.getenv("SLA_TARGETS_JSON", """{
         "low": {"response_minutes": 1440, "resolution_minutes": 7200},
         "normal": {"response_minutes": 480, "resolution_minutes": 2880},

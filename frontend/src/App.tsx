@@ -27,6 +27,7 @@ import {
   TicketStatus,
   updateTicket,
   routeTicket,
+  demoLogin,
   login,
   logout,
 } from './services/api'
@@ -238,7 +239,7 @@ function TicketWorkspace({ user, onLogout }: { user: AuthUser; onLogout: () => v
           <span>ops<span className="brand-light">desk</span></span>
         </a>
         <div className="workspace-label">WORKSPACE</div>
-        <div className="workspace-switcher"><span className="workspace-avatar">{user.agency_name.slice(0, 1).toUpperCase()}</span><span className="workspace-name">{user.agency_name}<small>Travel operations</small></span><Icon name="chevron" size={15} /></div>
+        <div className="workspace-switcher"><span className="workspace-avatar">{user.agency_name.slice(0, 1).toUpperCase()}</span><span className="workspace-name">{user.agency_name}<small>{user.is_demo ? 'Isolated demo workspace' : 'Travel operations'}</small></span><Icon name="chevron" size={15} /></div>
         <div className="nav-label">MENU</div>
         <nav className="nav-list" aria-label="Main navigation">
           <a className={`nav-item ${activePage === 'insights' ? 'active' : ''}`} href="#insights" aria-label="Insights" title="Insights" aria-current={activePage === 'insights' ? 'page' : undefined} onClick={(event) => { event.preventDefault(); window.history.pushState({}, '', '/insights'); setSelectedTicketId(null); setActivePage('insights') }}><Icon name="grid" /><span>Insights</span></a>
@@ -259,6 +260,7 @@ function TicketWorkspace({ user, onLogout }: { user: AuthUser; onLogout: () => v
         </header>
 
         <div className="page-content">
+          {user.is_demo && <div className="demo-workspace-banner" role="status"><strong>Demo workspace</strong><span>Changes are limited to this isolated sample agency.</span></div>}
           {activePage === 'insights' ? <InsightsDashboard user={user} /> : selectedTicketId !== null ? (
             selectedTicket ? <TicketDetails
               ticket={selectedTicket}
@@ -602,6 +604,11 @@ function App() {
     setUser(response.user)
   }
 
+  async function handleDemoLogin() {
+    const response = await demoLogin()
+    setUser(response.user)
+  }
+
   async function handleLogout() {
     try {
       await logout()
@@ -612,11 +619,14 @@ function App() {
   }
 
   if (checkingSession) return <div className="auth-loading">Loading your OpsDesk workspace…</div>
-  if (!user) return <LoginPage onLogin={handleLogin} />
+  if (!user) return <LoginPage onLogin={handleLogin} onDemoLogin={handleDemoLogin} />
   return <TicketWorkspace key={user.id} user={user} onLogout={() => void handleLogout()} />
 }
 
-function LoginPage({ onLogin }: { onLogin: (email: string, password: string) => Promise<void> }) {
+function LoginPage({ onLogin, onDemoLogin }: {
+  onLogin: (email: string, password: string) => Promise<void>
+  onDemoLogin: () => Promise<void>
+}) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -635,7 +645,42 @@ function LoginPage({ onLogin }: { onLogin: (email: string, password: string) => 
     }
   }
 
-  return <main className="login-screen"><section className="login-brand-side"><a className="brand" href="#login"><span className="brand-mark"><Icon name="plane" size={19} /></span><span>ops<span className="brand-light">desk</span></span></a><div className="login-intro"><span className="eyebrow">TRAVEL OPERATIONS</span><h1>Welcome back to a clearer way to work.</h1><p>Bring every traveler request and operational detail into one secure workspace.</p></div><div className="login-decoration"><span className="login-orbit" /><span className="login-orbit inner" /><span className="login-plane"><Icon name="plane" size={27} /></span></div><span className="login-copyright">OpsDesk · Travel operations</span></section><section className="login-form-side"><form className="login-card" onSubmit={submit}><div className="login-mobile-brand"><span className="brand-mark"><Icon name="plane" size={18} /></span> opsdesk</div><span className="eyebrow">YOUR WORKSPACE</span><h2>Sign in to OpsDesk</h2><p>Enter your work email and password to continue.</p>{error && <div className="form-error" role="alert">{error}</div>}<label className="form-field">Work email<input type="email" required autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@agency.com" /></label><label className="form-field">Password<input type="password" required autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Enter your password" /></label><button className="primary-button login-submit" type="submit" disabled={submitting}>{submitting ? 'Signing in…' : 'Sign in'}<Icon name="arrow" size={15} /></button><span className="login-security-note"><i /> Secure, agency-scoped access</span></form></section></main>
-}
+  async function continueAsDemo() {
+    setSubmitting(true)
+    setError('')
+    try {
+      await onDemoLogin()
+    } catch {
+      setError('Demo access is temporarily unavailable. Please try again later.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
+  return <main className="login-screen">
+    <section className="login-brand-side">
+      <a className="brand" href="#login"><span className="brand-mark"><Icon name="plane" size={19} /></span><span>ops<span className="brand-light">desk</span></span></a>
+      <div className="login-intro"><span className="eyebrow">TRAVEL OPERATIONS</span><h1>Welcome back to a clearer way to work.</h1><p>Bring every traveler request and operational detail into one secure workspace.</p></div>
+      <div className="login-decoration"><span className="login-orbit" /><span className="login-orbit inner" /><span className="login-plane"><Icon name="plane" size={27} /></span></div>
+      <span className="login-copyright">OpsDesk · Travel operations</span>
+    </section>
+    <section className="login-form-side">
+      <form className="login-card" onSubmit={submit}>
+        <div className="login-mobile-brand"><span className="brand-mark"><Icon name="plane" size={18} /></span> opsdesk</div>
+        <span className="eyebrow">YOUR WORKSPACE</span>
+        <h2>Sign in to OpsDesk</h2>
+        <p>Enter your work email and password to continue.</p>
+        {error && <div className="form-error" role="alert">{error}</div>}
+        <label className="form-field">Work email<input type="email" required autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@agency.com" /></label>
+        <label className="form-field">Password<input type="password" required autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Enter your password" /></label>
+        <button className="primary-button login-submit" type="submit" disabled={submitting}>{submitting ? 'Signing in…' : 'Sign in'}<Icon name="arrow" size={15} /></button>
+        <div className="login-divider"><span>or</span></div>
+        <button className="demo-login-button" type="button" onClick={() => void continueAsDemo()} disabled={submitting}>
+          {submitting ? 'Opening demo…' : 'Continue as Demo'}<Icon name="arrow" size={15} />
+        </button>
+        <span className="login-security-note"><i /> Secure, agency-scoped access</span>
+      </form>
+    </section>
+  </main>
+}
 export default App
